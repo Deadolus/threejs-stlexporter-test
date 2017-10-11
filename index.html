@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+
+
+        <script src='./js/three/three.js'></script>
+    <script src='./js/three/OrbitControls.js'></script>
+        <script src='./js/three/STLExporter.js'></script>
+
+        <script src='./js/three/demo.js' type="text/javascript"></script>
+
+
+
+    </head>
+
+    <body>
+<input type="button"  id="exportSTL" value="exportSTL" >
+<!--
+<canvas id="imageCanvas" width="1024px" height="256px" >
+           <script>
+var canvas = document.getElementById('imageCanvas');
+      var context = canvas.getContext('2d');
+      var imageObj = new Image();
+
+      imageObj.onload = function() {
+  var hRatio = canvas.width / imageObj.width    ;
+            var vRatio = canvas.height / imageObj.height  ;
+            var ratio  = Math.min ( hRatio, vRatio );
+            context.drawImage(imageObj, 0,0, imageObj.width, imageObj.height, 0,0,imageObj.width*ratio, imageObj.height*ratio);
+canvasTexture.needsUpdate = true;
+renderer.render( scene, camera );
+      };
+      imageObj.src = './bump-map.jpg';
+
+    </script>-->
+
+<div width="1024px" height="500px" >
+           <script>
+      init();
+
+    </script>
+    </div>
+  <div >
+
+                </div>
+<script src='./js/FileSaver.js'></script>
+    </body>
+</html>
