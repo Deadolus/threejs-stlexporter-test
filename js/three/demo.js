@@ -166,13 +166,16 @@ document.getElementById( "exportSTL" ).setAttribute( "onClick", "javascript: exp
 
 function exportSTL(scene) {
     console.log("Exporting model");
-    var exporter = new THREE.STLExporter();
+    //var exporter = new THREE.STLExporter();
+    var exporter = new THREE.STLBinaryExporter();
+    //var exporter = new THREE.OBJExporter();
     var object = scene.getObjectByName( "plane" );
     applyDisplacementMap(object, canvasTexture, 0, 0.5);
     var stlString = exporter.parse( object);
     var blob = new Blob([stlString], {type: 'text/plain'});
 
-    saveAs(blob, "model.stl");
+        saveAs(blob, "model.stl");
+    //saveAs(blob, "model.obj");
 }
 
 function applyDisplacementMap(mesh, heightMap, minHeight, maxHeight) {
