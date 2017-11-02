@@ -1,5 +1,5 @@
 //if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-var scene, renderer, camera, container, animation ,mixer, plane;
+var scene, renderer, camera, container, animation ,mixer, plane, renderTarget;
 var hasMorph = false;
 var prevTime = Date.now();
 var clock = new THREE.Clock();
@@ -7,10 +7,30 @@ var canvasTexture;
 var UvLayout = {INSIDE: 1, OUTSIDE: 2, OUTSIDE_MIRRORED: 3};
 var currentUvLayout = UvLayout.OUTSIDE;
 function render() {
-
-renderer.render( scene, camera );
+    //if(canvasTexture!==undefined)
+    //renderer.render( scene, camera, canvasTexture );
+    //renderer.render( scene, camera, renderTarget, true);
+//else
+renderer.render( scene, camera) ;
+    //var mycanvas = canvasTexture;
+    //var pixels = new self.Uint8Array(1024*500*4);
+    //var rt = renderTarget;
+    //var gl = renderer.context;
+    ////var fb =renderTarget.__webglFramebuffer ;
+    //var fb =gl.createFramebuffer();
+    //var fb = gl.createFramebuffer();
+    //gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, canvasTexture, 0);
+    //if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) == gl.FRAMEBUFFER_COMPLETE) {
+    //  var pixels = new Uint8Array(width * height * 4);
+    //  gl.readPixels(x, y, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    //}
+//gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+//gl.readPixels(0, 0, 1024, 500, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+//gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 //canvasTexture.needsUpdate = true;
 plane.material.needsUpdate = true;
+plane.geometry.attributes.position.needsUpdate = true;
 
 }
 
@@ -65,6 +85,18 @@ function setupLights() {
 
 function init(  ) {
 
+    renderTarget = new THREE.WebGLRenderTarget(1024,500, {
+    wrapS: THREE.RepeatWrapping,
+    wrapT: THREE.RepeatWrapping,
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    format: THREE.RGBAFormat,
+    type: THREE.FloatType,
+    stencilBuffer: false,
+        depthBuffer: true 
+    }
+    );
+renderTarget.generateMimpas = false;
     container = document.createElement( 'div' );
     container.id = 'viewport';
     document.body.appendChild( container );
@@ -92,9 +124,9 @@ function init(  ) {
 scene = new THREE.Scene();
 
 //canvasTexture = new THREE.Texture(parent.document.getElementById('imageCanvas'));
-canvasTexture = new THREE.TextureLoader().load( "./bump-map.jpg", 
+canvasTexture = new THREE.TextureLoader().load( "./bump-map.jpg",
 	function ( texture ) {
-render();
+        //render();
 	},
 );
 
@@ -102,31 +134,20 @@ render();
 
 canvasTexture.wrapS = canvasTexture.wrapT = THREE.RepeatWrapping;
 canvasTexture.repeat.set(1,1);
-//canvasTexture.needsUpdate = true;
-var geometry = new THREE.PlaneGeometry( 10, 2, 100, 100);
-//var geometry = new THREE.BoxGeometry( 1, 1, 1 );
-var material = new THREE.MeshPhongMaterial( {color: 0xffffff, 
-side: THREE.DoubleSide, 
-displacementMap: canvasTexture,
-displacementScale: 0.5, 
+var geometry = new THREE.PlaneBufferGeometry( 10, 2, 200, 100);
+var material = new THREE.MeshPhongMaterial( {color: 0xffffff,
+side: THREE.DoubleSide,
+    //displacementMap: canvasTexture,
+displacementScale: 0.5,
 displacementBias: 0,
-//bumpMap: canvasTexture, 
-map: canvasTexture, 
+//bumpMap: canvasTexture,
+map: canvasTexture,
 bumpScale: 0.5,
-skinning: true, 
-//wireframe: true
+skinning: true,
+    wireframe: true
 } );
 plane = new THREE.Mesh( geometry, material );
 plane.name = "plane";
-/*var uvs = geometry.faceVertexUvs[ 0 ];
-var w = 5 / 256;
-var h = 5 / 256;
-uvs[ 0 ][ 0 ].set( 0, h );
-uvs[ 0 ][ 1 ].set( 0, 0 );
-uvs[ 0 ][ 2 ].set( w, h );
-uvs[ 1 ][ 0 ].set( 0, 0 );
-uvs[ 1 ][ 1 ].set( w, 0 );
-uvs[ 1 ][ 2 ].set( w, h );*/
 
 
 plane.geometry.uvsNeedUpdate = true;
@@ -147,8 +168,43 @@ function exportSTL(scene) {
     console.log("Exporting model");
     var exporter = new THREE.STLExporter();
     var object = scene.getObjectByName( "plane" );
+    applyDisplacementMap(object, canvasTexture, 0, 0.5);
     var stlString = exporter.parse( object);
     var blob = new Blob([stlString], {type: 'text/plain'});
+
     saveAs(blob, "model.stl");
 }
 
+function applyDisplacementMap(mesh, heightMap, minHeight, maxHeight) {
+    var uvs = mesh.geometry.attributes.uv.array;
+    var positions = mesh.geometry.attributes.position.array;
+    var normals = mesh.geometry.attributes.normal.array;
+    var position = new THREE.Vector3();
+    var normal = new THREE.Vector3();
+    var uv = new THREE.Vector2();
+    var width = heightMap.image.width;
+    var height = heightMap.image.height;
+    var canvas = document.getElementById('imageCanvas');
+    var context = canvas.getContext('2d');
+
+    var buffer = context.getImageData(0, 0, width, height).data;
+    for(var index = 0; index < positions.length; index+=3) {
+        position.fromArray(positions,index);
+        normal.fromArray(normals,index);
+        uv.fromArray(uvs,(index/3)*2);
+        var u = ((Math.abs(uv.x)*width)%width) | 0;
+        var v = ((Math.abs(uv.y)*height)%height) | 0;
+        var pos = (u+v*width) * 4;
+        var r = buffer[pos] / 255.0;
+        var g = buffer[pos + 1] / 255.0;
+        var b = buffer[pos + 2] / 255.0;
+        var gradient = r * 0.33 + g * 0.33 + b * 0.33;
+        normal.normalize();
+        normal.multiplyScalar(minHeight + (maxHeight - minHeight) * gradient);
+        position = position.add(normal);
+        position.toArray(positions, index);
+    }
+    mesh.geometry.needsUpdate = true;
+    render();
+    render();
+}

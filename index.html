@@ -22,9 +22,9 @@
 
     <body>
 <input type="button"  id="exportSTL" value="exportSTL" >
-<!--
+
 <canvas id="imageCanvas" width="1024px" height="256px" >
-           <script>
+            <script>
 var canvas = document.getElementById('imageCanvas');
       var context = canvas.getContext('2d');
       var imageObj = new Image();
@@ -33,13 +33,18 @@ var canvas = document.getElementById('imageCanvas');
   var hRatio = canvas.width / imageObj.width    ;
             var vRatio = canvas.height / imageObj.height  ;
             var ratio  = Math.min ( hRatio, vRatio );
-            context.drawImage(imageObj, 0,0, imageObj.width, imageObj.height, 0,0,imageObj.width*ratio, imageObj.height*ratio);
+    context.translate(canvas.width/2, canvas.height/2); 
+        context.scale(-1,1);
+        context.rotate(-Math.PI);
+    context.drawImage(imageObj, -(imageObj.width/2), -(imageObj.height/2));
+//            context.drawImage(imageObj, 0,0, imageObj.width, imageObj.height, 0,0,imageObj.width*ratio, imageObj.height*ratio);
+            //context.drawImage(imageObj, 0,0, imageObj.width, imageObj.height, 0,0,imageObj.width*ratio, imageObj.height*ratio);
 canvasTexture.needsUpdate = true;
 renderer.render( scene, camera );
       };
       imageObj.src = './bump-map.jpg';
 
-    </script>-->
+    </script>
 
 <div width="1024px" height="500px" >
            <script>
